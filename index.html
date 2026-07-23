@@ -11,94 +11,78 @@
       overflow: hidden;
       background-color: #19191a;
       color: white;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: sans-serif;
     }
 
     #game-container {
       position: relative;
       width: 100vw;
       height: 100vh;
+      background: #000; /* Черный фон для контраста */
     }
 
-    /* Таймер */
     #timer {
       position: absolute;
-      top: 15px;
-      left: 15px;
-      font-size: 28px;
+      top: 20px;
+      left: 20px;
+      font-size: 32px;
       font-weight: bold;
       color: white;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 10px 20px;
-      border-radius: 12px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
       z-index: 100;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: color 0.3s;
-      user-select: none;
     }
 
-    /* Счёт */
     #score-display {
       position: absolute;
-      top: 15px;
-      right: 15px;
-      font-size: 24px;
-      font-weight: bold;
+      top: 20px;
+      right: 20px;
+      font-size: 28px;
       color: #4caf50;
+      font-weight: bold;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
       z-index: 100;
+    }
+
+    /* ИСПРАВЛЕННЫЙ СТИЛЬ КРУГА */
+    #target {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background-color: #ffff00; /* Ярко-желтый */
+      border: 4px solid #ff0000; /* Красная рамка */
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 10;
+      display: block; /* Всегда видим */
+      top: 100px;
+      left: 100px;
+      box-shadow: 0 0 15px rgba(255, 255, 0, 0.6);
       user-select: none;
     }
 
-    /* Круг-цель */
-    #target {
-      position: absolute;
-      width: 60px;
-      height: 60px;
-      background-color: #ff5252;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(255, 82, 82, 0.4);
-      z-index: 10;
-      transition: transform 0.1s;
-      display: none; /* Скрыт по умолчанию */
-      will-change: left, top; /* Оптимизация для плавного движения */
-    }
-
-    #target:active {
-      transform: scale(0.95);
-    }
-
-    /* Кнопка сохранения */
     #save-score-btn {
       position: absolute;
       bottom: 40px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 16px 32px;
+      padding: 15px 30px;
       font-size: 20px;
-      font-weight: bold;
-      background-color: #2481cc;
+      background: #2481cc;
       color: white;
       border: none;
-      border-radius: 12px;
+      border-radius: 8px;
       cursor: pointer;
       z-index: 100;
-      box-shadow: 0 4px 15px rgba(36, 129, 204, 0.4);
       display: none;
     }
 
-    #save-score-btn:active {
-      transform: translateX(-50%) scale(0.98);
-    }
-
-    /* Экран конца игры */
     #game-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.85);
       z-index: 90;
       display: none;
       justify-content: center;
@@ -107,15 +91,15 @@
     }
 
     #final-message {
-      font-size: 32px;
+      font-size: 36px;
+      color: #ff5252;
       font-weight: bold;
-      margin-bottom: 10px;
-      text-align: center;
+      margin-bottom: 20px;
     }
 
     #final-score {
-      font-size: 48px;
-      color: #4caf50;
+      font-size: 60px;
+      color: #fff;
       font-weight: bold;
     }
   </style>
@@ -134,11 +118,9 @@
   </div>
 
   <script>
-    // --- КОНФИГУРАЦИЯ ---
-    // ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ОТ NGROK (например, https://x1y2-z3a4.ngrok-free.app)
+    // ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ОТ NGROK
     const API_URL = 'https://ngrok.com/docs/errors/err_ngrok_4018'; 
     
-    // --- ПЕРЕМЕННЫЕ ---
     let score = 0;
     let timeLeft = 30;
     let timerInterval = null;
@@ -146,7 +128,6 @@
     let isGameActive = false;
     let vkUserId = 'unknown';
 
-    // --- ЭЛЕМЕНТЫ DOM ---
     const timerEl = document.getElementById('timer');
     const scoreEl = document.getElementById('score-display');
     const targetEl = document.getElementById('target');
@@ -154,7 +135,6 @@
     const overlay = document.getElementById('game-overlay');
     const finalScoreEl = document.getElementById('final-score');
 
-    // --- ИНИЦИАЛИЗАЦИЯ VK BRIDGE ---
     if (window.vkBridge) {
       window.vkBridge.send('VKWebAppInit');
       window.vkBridge.on('VKWebAppGetUserInfoResult', (e) => {
@@ -164,29 +144,20 @@
       console.log('VK Bridge не найден. Игра запущена вне VK.');
     }
 
-    // --- ЛОГИКА ТАЙМЕРА ---
     function updateTimer() {
       if (!timerEl) return;
-      
       const displayTime = Math.max(0, timeLeft);
       timerEl.textContent = displayTime;
-
-      if (displayTime <= 5) {
-        timerEl.style.color = '#ff5252';
-      } else {
-        timerEl.style.color = 'white';
-      }
+      timerEl.style.color = displayTime <= 5 ? '#ff5252' : 'white';
     }
 
     function startTimer() {
       timeLeft = 30;
       updateTimer();
-      
-      clearInterval(timerInterval); // Защита от дублей
+      clearInterval(timerInterval);
       timerInterval = setInterval(() => {
         timeLeft--;
         updateTimer();
-
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
           endGame();
@@ -194,38 +165,32 @@
       }, 1000);
     }
 
-    // --- ЛОГИКА ИГРЫ ---
     function updateScore() {
-      if (scoreEl) {
-        scoreEl.textContent = `Счёт: \${score}`;
-      }
+      if (scoreEl) scoreEl.textContent = `Счёт: \${score}`;
     }
 
     function spawnTarget() {
-      // Если игра не активна — ничего не делаем
-      if (!isGameActive) {
-        console.log('[DEBUG] spawnTarget: игра не активна, выход');
-        return;
-      }
+      if (!isGameActive || !targetEl) return;
 
       const gameContainer = document.getElementById('game-container');
-      if (!gameContainer) {
-        console.error('[DEBUG] spawnTarget: контейнер не найден!');
-        return;
-      }
+      if (!gameContainer) return;
 
-      const maxX = Math.max(0, gameContainer.clientWidth - 60);
-      const maxY = Math.max(0, gameContainer.clientHeight - 60);
+      // ЗАЩИТА: берем размеры окна, если контейнер не отрисован
+      const cWidth = gameContainer.clientWidth || window.innerWidth;
+      const cHeight = gameContainer.clientHeight || window.innerHeight;
+      
+      const size = 100; // Размер круга из CSS
+      const maxX = Math.max(0, cWidth - size);
+      const maxY = Math.max(0, cHeight - size);
 
       const randomX = Math.floor(Math.random() * (maxX + 1));
       const randomY = Math.floor(Math.random() * (maxY + 1));
 
-      // Обновляем координаты
       targetEl.style.left = `\${randomX}px`;
       targetEl.style.top = `\${randomY}px`;
-      targetEl.style.display = 'block';
       
-      console.log(`[DEBUG] spawnTarget: новые координаты X=${randomX}, Y=${randomY}`);
+      // Для отладки в консоли
+      // console.log(`Spawned at: ${randomX}, ${randomY}`);
     }
 
     function startGame() {
@@ -235,16 +200,14 @@
       
       overlay.style.display = 'none';
       saveBtn.style.display = 'none';
-      targetEl.style.display = 'none';
       
       startTimer();
       spawnTarget();
 
       clearInterval(targetInterval);
-      // Круг появляется каждые 1.5 секунды
       targetInterval = setInterval(spawnTarget, 1500);
       
-      console.log('[DEBUG] startGame: игра запущена');
+      console.log('[GAME] Start game successful');
     }
 
     function endGame() {
@@ -253,39 +216,32 @@
       clearInterval(targetInterval);
       
       targetEl.style.display = 'none';
-      
       finalScoreEl.textContent = score;
       overlay.style.display = 'flex';
       saveBtn.style.display = 'block';
-      
       document.getElementById('game-container').style.pointerEvents = 'none';
-      console.log('[DEBUG] endGame: игра завершена');
+      console.log('[GAME] End game');
     }
 
-    // --- ОБРАБОТЧИК КЛИКА ---
     if (targetEl) {
       targetEl.addEventListener('click', () => {
         if (!isGameActive) return;
-
         score++;
         updateScore();
-        
-        // Визуальный эффект исчезновения
-        targetEl.style.display = 'none';
-        // Новый круг появится через интервал setInterval
+        // Эффект исчезновения
+        targetEl.style.opacity = '0';
+        setTimeout(() => {
+            targetEl.style.opacity = '1';
+        }, 100);
       });
     }
 
-    // --- СОХРАНЕНИЕ РЕЗУЛЬТАТА ---
     async function saveScore() {
       clearInterval(timerInterval);
       clearInterval(targetInterval);
       isGameActive = false;
 
-      const payload = {
-        vk_user_id: vkUserId,
-        score: score
-      };
+      const payload = { vk_user_id: vkUserId, score: score };
 
       try {
         const res = await fetch(`\${API_URL}/api/save_score`, {
@@ -295,20 +251,18 @@
         });
 
         if (res.ok) {
-          alert('Результат успешно сохранён!');
+          alert('Результат сохранён!');
         } else {
-          const errData = await res.json().catch(() => ({}));
-          alert(`Ошибка сохранения: \${errData.detail || 'Неизвестная ошибка'}`);
+          alert('Ошибка сохранения');
         }
       } catch (error) {
-        console.error('Network error:', error);
-        alert('Ошибка сети. Проверьте ngrok и бэкенд.');
+        console.error(error);
+        alert('Ошибка сети. Проверьте ngrok.');
       }
     }
 
-    // --- ЗАПУСК ---
-    // Небольшая задержка, чтобы DOM точно успел прогрузиться
-    setTimeout(startGame, 100);
+    // Запуск с небольшой задержкой
+    setTimeout(startGame, 200);
   </script>
 </body>
 </html>
