@@ -14,6 +14,9 @@
         --primary-hover: #005edd;
         --target: #ff5252;
         --glow: #ff3d3d;
+        --rank-gold: #FFD700;
+        --rank-silver: #C0C0C0;
+        --rank-bronze: #CD7F32;
       }
 
       * { box-sizing: border-box; }
@@ -50,6 +53,7 @@
         transform: scale(0.92) !important;
         animation: none;
       }
+      /* UI */
       #ui {
         position: absolute;
         top: 24px;
@@ -68,7 +72,7 @@
       }
       #score {
         font-size: 28px;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.5px;
       }
       .icon {
@@ -109,23 +113,25 @@
       #btn-save:hover { background: var(--primary-hover); }
       #btn-save:active { transform: scale(0.96); }
 
-      /* Экран победы/паузы */
-      #overlay {
+      /* Оверлеи */
+      .overlay {
         position: absolute;
         inset: 0;
-        background: rgba(0,0,0,0.75);
+        background: rgba(0,0,0,0.85);
         display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         z-index: 20;
         padding: 20px;
+        backdrop-filter: blur(4px);
       }
-      #overlay.active { display: flex; }
+      .overlay.active { display: flex; }
       .overlay-title {
         font-size: 28px;
         font-weight: 700;
         margin-bottom: 8px;
+        text-align: center;
       }
       .overlay-text {
         color: var(--vk-text-secondary);
@@ -140,8 +146,54 @@
         border-radius: 12px;
         cursor: pointer;
         font-size: 16px;
+        transition: border-color 0.2s;
       }
       .btn-secondary:hover { border-color: white; }
+
+      /* Топ-10 */
+      .leaderboard {
+        width: 100%;
+        max-width: 400px;
+        background: var(--vk-surface);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      }
+      .leaderboard-header {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: var(--vk-text);
+      }
+      .rank-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .rank-col {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .rank-num {
+        font-weight: 700;
+        min-width: 24px;
+        text-align: right;
+      }
+      .rank-1 .rank-num { color: var(--rank-gold); }
+      .rank-2 .rank-num { color: var(--rank-silver); }
+      .rank-3 .rank-num { color: var(--rank-bronze); }
+      .rank-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+      }
+      .rank-score {
+        font-weight: 600;
+      }
     </style>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <script>
@@ -163,20 +215,33 @@
       <div id="status">Жми на пульсирующие квадраты</div>
 
       <button id="btn-save" onclick="saveScore()">Сохранить результат</button>
+    </div>
 
-      <div id="overlay">
-        <div class="overlay-title">Игра окончена</div>
-        <div class="overlay-text">Твой счёт: <span id="final-score">0</span></div>
-        <button class="btn-secondary" onclick="restartGame()">Играть снова</button>
+    <!-- Экран «Игра окончена» -->
+    <div id="overlay-end" class="overlay">
+      <div class="overlay-title">Игра окончена</div>
+      <div class="overlay-text">Твой счёт: <span id="final-score">0</span></div>
+      <button class="btn-secondary" onclick="showLeaderboard()">Посмотреть топ‑10</button>
+      <button class="btn-secondary" style="margin-top:12px" onclick="restartGame()">Играть снова</button>
+    </div>
+
+    <!-- Топ‑10 -->
+    <div id="overlay-leaderboard" class="overlay">
+      <div class="overlay-title">Топ‑10 игроков</div>
+      <div class="leaderboard">
+        <div class="leaderboard-header">Лучшие результаты</div>
+        <div id="leaderboard-list"></div>
       </div>
+      <button class="btn-secondary" style="margin-top:20px" onclick="closeLeaderboard()">Закрыть</button>
     </div>
 
     <script>
       const scoreEl = document.getElementById('score');
       const statusEl = document.getElementById('status');
       const finalScoreEl = document.getElementById('final-score');
-      const overlay = document.getElementById('overlay');
-      const game = document.getElementById('game');
+      const overlayEnd = document.getElementById('overlay-end');
+      const overlayLb = document.getElementById('overlay-leaderboard');
+      const lbList = document.getElementById('leaderboard-list');
 
       let score = 0;
       let gameActive = true;
@@ -187,7 +252,7 @@
         const target = document.createElement('div');
         target.className = 'target';
         const maxX = window.innerWidth - 60;
-        const maxY = window.innerHeight - 60 - 100; // отступы под UI
+        const maxY = window.innerHeight - 60 - 100;
         target.style.left = Math.random() * maxX + 'px';
         target.style.top = Math.random() * maxY + 'px';
 
@@ -198,7 +263,7 @@
           spawnTarget();
         };
 
-        game.appendChild(target);
+        document.getElementById('game').appendChild(target);
 
         setTimeout(() => {
           if (target.parentNode) {
@@ -208,14 +273,13 @@
         }, 1200);
       }
 
-      // Запуск спавна квадратов
       spawnInterval = setInterval(spawnTarget, 1200);
 
       function endGame() {
         gameActive = false;
         clearInterval(spawnInterval);
         finalScoreEl.innerText = score;
-        overlay.classList.add('active');
+        overlayEnd.classList.add('active');
         statusEl.style.opacity = '0';
       }
 
@@ -223,9 +287,9 @@
         score = 0;
         scoreEl.innerText = '0';
         gameActive = true;
-        overlay.classList.remove('active');
+        overlayEnd.classList.remove('active');
+        overlayLb.classList.remove('active');
         statusEl.style.opacity = '1';
-        // очистить оставшиеся цели
         const targets = document.querySelectorAll('.target');
         targets.forEach(t => t.remove());
         spawnInterval = setInterval(spawnTarget, 1200);
@@ -250,10 +314,38 @@
         }
       }
 
-      // Адаптация под ресайз
-      window.addEventListener('resize', () => {
-        // можно добавить пересчёт maxX/maxY при необходимости
-      });
+      async function showLeaderboard() {
+        statusEl.innerText = 'Загрузка рейтинга...';
+        try {
+          const res = await fetch('https://ТВОЙ_ДОМЕН/api/top');
+          const data = await res.json();
+
+          lbList.innerHTML = '';
+          data.forEach((row, idx) => {
+            const rankClass = idx === 0 ? 'rank-1' : (idx === 1 ? 'rank-2' : (idx === 2 ? 'rank-3' : ''));
+            const div = document.createElement('div');
+            div.className = `rank-row ${rankClass}`;
+            div.innerHTML = `
+              <div class="rank-col">
+                <span class="rank-num">${idx + 1}</span>
+                <span class="rank-name">Игрок #${row.vk_user_id}</span>
+              </div>
+              <span class="rank-score">${row.best_score}</span>
+            `;
+            lbList.appendChild(div);
+          });
+
+          overlayLb.classList.add('active');
+          statusEl.innerText = '';
+        } catch (e) {
+          statusEl.innerText = 'Не удалось загрузить рейтинг';
+          console.error(e);
+        }
+      }
+
+      function closeLeaderboard() {
+        overlayLb.classList.remove('active');
+      }
 
       (async () => {
         try {
@@ -264,8 +356,8 @@
         }
       })();
 
-      // Простая механика «окончить игру» по времени (для теста)
-      setTimeout(endGame, 60000); // 60 секунд
+      // Игра длится 60 секунд (можно убрать)
+      setTimeout(endGame, 60000);
     </script>
   </body>
 </html>
