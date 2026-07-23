@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>VK Mini Game</title>
-  <script src="https://unpkg.com/@vkontakte/vkui@4.7.0/dist/vkui.js"></script>
+  <title>VK Mini Game: Поймай круг</title>
   <style>
     body, html {
       margin: 0;
@@ -35,6 +34,7 @@
       z-index: 100;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       transition: color 0.3s;
+      user-select: none;
     }
 
     /* Счёт */
@@ -46,9 +46,10 @@
       font-weight: bold;
       color: #4caf50;
       z-index: 100;
+      user-select: none;
     }
 
-    /* Квадрат-цель */
+    /* Круг-цель */
     #target {
       position: absolute;
       width: 60px;
@@ -59,14 +60,15 @@
       box-shadow: 0 4px 10px rgba(255, 82, 82, 0.4);
       z-index: 10;
       transition: transform 0.1s;
-      display: none; /* Скрыт, пока не появится */
+      display: none; /* Скрыт по умолчанию */
+      will-change: left, top; /* Оптимизация для плавного движения */
     }
 
     #target:active {
       transform: scale(0.95);
     }
 
-    /* Кнопка сохранения (появляется в конце) */
+    /* Кнопка сохранения */
     #save-score-btn {
       position: absolute;
       bottom: 40px;
@@ -82,14 +84,14 @@
       cursor: pointer;
       z-index: 100;
       box-shadow: 0 4px 15px rgba(36, 129, 204, 0.4);
-      display: none; /* Скрыта по умолчанию */
+      display: none;
     }
 
     #save-score-btn:active {
       transform: translateX(-50%) scale(0.98);
     }
 
-    /* Экран конца игры (фон) */
+    /* Экран конца игры */
     #game-overlay {
       position: absolute;
       top: 0;
@@ -108,6 +110,7 @@
       font-size: 32px;
       font-weight: bold;
       margin-bottom: 10px;
+      text-align: center;
     }
 
     #final-score {
@@ -119,19 +122,11 @@
 </head>
 <body>
   <div id="game-container">
-    <!-- Таймер -->
     <div id="timer">30</div>
-    
-    <!-- Счёт -->
     <div id="score-display">Счёт: 0</div>
-
-    <!-- Цель (квадрат/круг) -->
     <div id="target"></div>
-
-    <!-- Кнопка сохранения -->
     <button id="save-score-btn" onclick="saveScore()">Сохранить результат</button>
-
-    <!-- Затемнение при конце игры -->
+    
     <div id="game-overlay">
       <div id="final-message">Время вышло!</div>
       <div id="final-score">0</div>
@@ -140,8 +135,8 @@
 
   <script>
     // --- КОНФИГУРАЦИЯ ---
-    // ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ОТ NGROK (например, https://a1b2-c3d4.ngrok-free.app)
-    const API_URL = 'https://https://ngrok.com/docs/errors/err_ngrok_4018'; 
+    // ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ОТ NGROK (например, https://x1y2-z3a4.ngrok-free.app)
+    const API_URL = 'https://ngrok.com/docs/errors/err_ngrok_4018'; 
     
     // --- ПЕРЕМЕННЫЕ ---
     let score = 0;
@@ -165,7 +160,6 @@
       window.vkBridge.on('VKWebAppGetUserInfoResult', (e) => {
         vkUserId = e.data.user_id.toString();
       });
-      // Если пользователь уже авторизован, можно сразу получить ID, но для мини-аппов часто достаточно user_id из init
     } else {
       console.log('VK Bridge не найден. Игра запущена вне VK.');
     }
@@ -177,7 +171,6 @@
       const displayTime = Math.max(0, timeLeft);
       timerEl.textContent = displayTime;
 
-      // Меняем цвет на красный за 5 секунд до конца
       if (displayTime <= 5) {
         timerEl.style.color = '#ff5252';
       } else {
@@ -189,6 +182,7 @@
       timeLeft = 30;
       updateTimer();
       
+      clearInterval(timerInterval); // Защита от дублей
       timerInterval = setInterval(() => {
         timeLeft--;
         updateTimer();
@@ -202,22 +196,36 @@
 
     // --- ЛОГИКА ИГРЫ ---
     function updateScore() {
-      scoreEl.textContent = `Счёт: \${score}`;
+      if (scoreEl) {
+        scoreEl.textContent = `Счёт: \${score}`;
+      }
     }
 
     function spawnTarget() {
-      if (!isGameActive) return;
+      // Если игра не активна — ничего не делаем
+      if (!isGameActive) {
+        console.log('[DEBUG] spawnTarget: игра не активна, выход');
+        return;
+      }
 
       const gameContainer = document.getElementById('game-container');
-      const maxX = gameContainer.clientWidth - 60; // 60px - ширина цели
-      const maxY = gameContainer.clientHeight - 60;
+      if (!gameContainer) {
+        console.error('[DEBUG] spawnTarget: контейнер не найден!');
+        return;
+      }
 
-      const randomX = Math.floor(Math.random() * maxX);
-      const randomY = Math.floor(Math.random() * maxY);
+      const maxX = Math.max(0, gameContainer.clientWidth - 60);
+      const maxY = Math.max(0, gameContainer.clientHeight - 60);
 
+      const randomX = Math.floor(Math.random() * (maxX + 1));
+      const randomY = Math.floor(Math.random() * (maxY + 1));
+
+      // Обновляем координаты
       targetEl.style.left = `\${randomX}px`;
       targetEl.style.top = `\${randomY}px`;
       targetEl.style.display = 'block';
+      
+      console.log(`[DEBUG] spawnTarget: новые координаты X=${randomX}, Y=${randomY}`);
     }
 
     function startGame() {
@@ -225,55 +233,54 @@
       updateScore();
       isGameActive = true;
       
-      // Скрываем элементы конца игры
       overlay.style.display = 'none';
       saveBtn.style.display = 'none';
+      targetEl.style.display = 'none';
       
-      // Запускаем таймер
       startTimer();
-      
-      // Показываем первый квадрат
       spawnTarget();
 
-      // Генерируем новый квадрат каждые 1.5 секунды
       clearInterval(targetInterval);
+      // Круг появляется каждые 1.5 секунды
       targetInterval = setInterval(spawnTarget, 1500);
+      
+      console.log('[DEBUG] startGame: игра запущена');
     }
 
     function endGame() {
       isGameActive = false;
+      clearInterval(timerInterval);
       clearInterval(targetInterval);
       
-      // Скрываем активный квадрат
       targetEl.style.display = 'none';
       
-      // Показываем экран конца игры
       finalScoreEl.textContent = score;
       overlay.style.display = 'flex';
-      
-      // Показываем кнопку сохранения
       saveBtn.style.display = 'block';
       
-      // Отключаем клики по полю (опционально, чтобы не спавнились новые квадраты, если интервал еще не сработал)
       document.getElementById('game-container').style.pointerEvents = 'none';
+      console.log('[DEBUG] endGame: игра завершена');
     }
 
-    // --- ОБРАБОТЧИК КЛИКА ПО КВАДРАТУ ---
-    targetEl.addEventListener('click', () => {
-      if (!isGameActive) return;
+    // --- ОБРАБОТЧИК КЛИКА ---
+    if (targetEl) {
+      targetEl.addEventListener('click', () => {
+        if (!isGameActive) return;
 
-      score++;
-      updateScore();
-      
-      // Эффект исчезновения/появления
-      targetEl.style.display = 'none';
-      // Квадрат появится снова через интервал setInterval (1.5 сек)
-    });
+        score++;
+        updateScore();
+        
+        // Визуальный эффект исчезновения
+        targetEl.style.display = 'none';
+        // Новый круг появится через интервал setInterval
+      });
+    }
 
     // --- СОХРАНЕНИЕ РЕЗУЛЬТАТА ---
     async function saveScore() {
-      // Останавливаем таймер, если вдруг он еще тикает (на всякий случай)
       clearInterval(timerInterval);
+      clearInterval(targetInterval);
+      isGameActive = false;
 
       const payload = {
         vk_user_id: vkUserId,
@@ -289,21 +296,19 @@
 
         if (res.ok) {
           alert('Результат успешно сохранён!');
-          // Можно закрыть приложение или перезапустить
-          // window.location.reload(); 
         } else {
           const errData = await res.json().catch(() => ({}));
           alert(`Ошибка сохранения: \${errData.detail || 'Неизвестная ошибка'}`);
         }
       } catch (error) {
         console.error('Network error:', error);
-        alert('Ошибка сети. Проверьте, запущен ли ngrok и бэкенд.');
+        alert('Ошибка сети. Проверьте ngrok и бэкенд.');
       }
     }
 
     // --- ЗАПУСК ---
-    // Если игра должна начинаться сразу при загрузке страницы
-    startGame();
+    // Небольшая задержка, чтобы DOM точно успел прогрузиться
+    setTimeout(startGame, 100);
   </script>
 </body>
 </html>
