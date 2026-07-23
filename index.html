@@ -5,16 +5,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Поймай квадрат</title>
     <style>
-      body { margin: 0; background: #191919; color: #fff; font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; }
-      #game { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-      .target { position: absolute; width: 60px; height: 60px; background: #ff5252; border-radius: 8px; cursor: pointer; transition: transform 0.1s; }
-      .target:active { transform: scale(0.95); }
-      #ui { position: absolute; top: 20px; left: 20px; pointer-events: none; }
-      #score { font-size: 24px; font-weight: bold; }
-      #status { margin-top: 8px; opacity: 0.8; font-size: 16px; }
-      #btn-save { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: #0077FF; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+      :root {
+        --vk-bg: #191919;
+        --vk-surface: #252525;
+        --vk-text: #ffffff;
+        --vk-text-secondary: #999999;
+        --primary: #0077FF;
+        --primary-hover: #005edd;
+        --target: #ff5252;
+        --glow: #ff3d3d;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--vk-bg);
+        color: var(--vk-text);
+        font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+        overflow: hidden;
+      }
+      #game {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background-image: radial-gradient(circle at 50% 50%, #222 0%, #191919 100%);
+      }
+      .target {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: var(--target);
+        border-radius: 12px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4);
+        animation: pulse 1.2s infinite ease-in-out;
+        will-change: transform;
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+      }
+      .target:active {
+        transform: scale(0.92) !important;
+        animation: none;
+      }
+      #ui {
+        position: absolute;
+        top: 24px;
+        left: 24px;
+        right: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        pointer-events: none;
+        z-index: 10;
+      }
+      .score-block {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #score {
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+      .icon {
+        width: 20px;
+        height: 20px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 50%;
+        display: inline-block;
+      }
+      #status {
+        position: absolute;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        color: var(--vk-text-secondary);
+        font-size: 15px;
+        max-width: 320px;
+        line-height: 1.4;
+      }
+      #btn-save {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 14px 32px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 17px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(0, 119, 255, 0.3);
+        transition: background 0.2s, transform 0.1s;
+        z-index: 10;
+      }
+      #btn-save:hover { background: var(--primary-hover); }
+      #btn-save:active { transform: scale(0.96); }
+
+      /* Экран победы/паузы */
+      #overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 20;
+        padding: 20px;
+      }
+      #overlay.active { display: flex; }
+      .overlay-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .overlay-text {
+        color: var(--vk-text-secondary);
+        margin-bottom: 24px;
+        text-align: center;
+      }
+      .btn-secondary {
+        background: transparent;
+        color: white;
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 12px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .btn-secondary:hover { border-color: white; }
     </style>
-    <!-- VK Bridge -->
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <script>
       (async () => {
@@ -25,33 +153,48 @@
   <body>
     <div id="game">
       <div id="ui">
-        <div id="score">Счёт: 0</div>
-        <div id="status">Жми на красные квадраты!</div>
+        <div class="score-block">
+          <div class="icon"></div>
+          <div id="score">0</div>
+        </div>
+        <div style="font-size:14px; color:var(--vk-text-secondary)">VK Game</div>
       </div>
+
+      <div id="status">Жми на пульсирующие квадраты</div>
+
       <button id="btn-save" onclick="saveScore()">Сохранить результат</button>
+
+      <div id="overlay">
+        <div class="overlay-title">Игра окончена</div>
+        <div class="overlay-text">Твой счёт: <span id="final-score">0</span></div>
+        <button class="btn-secondary" onclick="restartGame()">Играть снова</button>
+      </div>
     </div>
 
     <script>
       const scoreEl = document.getElementById('score');
       const statusEl = document.getElementById('status');
+      const finalScoreEl = document.getElementById('final-score');
+      const overlay = document.getElementById('overlay');
       const game = document.getElementById('game');
 
       let score = 0;
       let gameActive = true;
+      let spawnInterval;
 
       function spawnTarget() {
         if (!gameActive) return;
         const target = document.createElement('div');
         target.className = 'target';
         const maxX = window.innerWidth - 60;
-        const maxY = window.innerHeight - 60 - 100;
+        const maxY = window.innerHeight - 60 - 100; // отступы под UI
         target.style.left = Math.random() * maxX + 'px';
         target.style.top = Math.random() * maxY + 'px';
 
         target.onclick = () => {
           target.remove();
           score += 1;
-          scoreEl.innerText = 'Счёт: ' + score;
+          scoreEl.innerText = score;
           spawnTarget();
         };
 
@@ -65,12 +208,33 @@
         }, 1200);
       }
 
-      spawnTarget();
+      // Запуск спавна квадратов
+      spawnInterval = setInterval(spawnTarget, 1200);
+
+      function endGame() {
+        gameActive = false;
+        clearInterval(spawnInterval);
+        finalScoreEl.innerText = score;
+        overlay.classList.add('active');
+        statusEl.style.opacity = '0';
+      }
+
+      function restartGame() {
+        score = 0;
+        scoreEl.innerText = '0';
+        gameActive = true;
+        overlay.classList.remove('active');
+        statusEl.style.opacity = '1';
+        // очистить оставшиеся цели
+        const targets = document.querySelectorAll('.target');
+        targets.forEach(t => t.remove());
+        spawnInterval = setInterval(spawnTarget, 1200);
+      }
 
       async function saveScore() {
         statusEl.innerText = 'Отправка...';
         try {
-          const res = await fetch('https://dashboard.ngrok.com/get-started/your-authtoken/api/save_score', {
+          const res = await fetch('https://ТВОЙ_ДОМЕН/api/save_score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -86,6 +250,11 @@
         }
       }
 
+      // Адаптация под ресайз
+      window.addEventListener('resize', () => {
+        // можно добавить пересчёт maxX/maxY при необходимости
+      });
+
       (async () => {
         try {
           const user = await vkBridge.send('VKWebAppGetUserInfo');
@@ -94,6 +263,9 @@
           console.warn('Не удалось получить данные пользователя');
         }
       })();
+
+      // Простая механика «окончить игру» по времени (для теста)
+      setTimeout(endGame, 60000); // 60 секунд
     </script>
   </body>
 </html>
