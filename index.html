@@ -139,7 +139,6 @@
     let score = 0;
     let timeLeft = 30;
     let timerInterval = null;
-    let targetInterval = null;
     let isGameActive = false;
     let vkUserId = 'unknown';
 
@@ -204,6 +203,8 @@
 
       targetEl.style.left = `\${randomX}px`;
       targetEl.style.top = `\${randomY}px`;
+      
+      console.log(`[MOVE] Квадрат перемещён: X=${randomX}, Y=${randomY}`);
     }
 
     function startGame() {
@@ -216,17 +217,12 @@
 
       startTimer();
       spawnTarget();
-
-      clearInterval(targetInterval);
-      targetInterval = setInterval(spawnTarget, 1500);
-
       console.log('[GAME] Start game successful');
     }
 
     function endGame() {
       isGameActive = false;
       clearInterval(timerInterval);
-      clearInterval(targetInterval);
 
       targetEl.style.display = 'none';
       finalScoreEl.textContent = score;
@@ -236,21 +232,19 @@
       console.log('[GAME] End game');
     }
 
+    // ГЛАВНОЕ ИСПРАВЛЕНИЕ: перемещение по клику
     if (targetEl) {
       targetEl.addEventListener('click', () => {
         if (!isGameActive) return;
 
         score++;
         updateScore();
-
-        // Мгновенный эффект нажатия уже есть через :active
-        // Новый квадрат появится по таймеру (setInterval)
+        spawnTarget(); // <-- Теперь квадрат прыгает сразу при клике
       });
     }
 
     async function saveScore() {
       clearInterval(timerInterval);
-      clearInterval(targetInterval);
       isGameActive = false;
 
       const payload = { vk_user_id: vkUserId, score: score };
