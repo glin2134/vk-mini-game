@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Поймай квадрат</title>
+    <style>
+      body { margin: 0; background: #191919; color: #fff; font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; }
+      #game { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+      .target { position: absolute; width: 60px; height: 60px; background: #ff5252; border-radius: 8px; cursor: pointer; transition: transform 0.1s; }
+      .target:active { transform: scale(0.95); }
+      #ui { position: absolute; top: 20px; left: 20px; pointer-events: none; }
+      #score { font-size: 24px; font-weight: bold; }
+      #status { margin-top: 8px; opacity: 0.8; font-size: 16px; }
+      #btn-save { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; background: #0077FF; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    </style>
+    <!-- VK Bridge -->
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <script>
+      (async () => {
+        await vkBridge.send('VKWebAppInit');
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="game">
+      <div id="ui">
+        <div id="score">Счёт: 0</div>
+        <div id="status">Жми на красные квадраты!</div>
+      </div>
+      <button id="btn-save" onclick="saveScore()">Сохранить результат</button>
+    </div>
+
+    <script>
+      const scoreEl = document.getElementById('score');
+      const statusEl = document.getElementById('status');
+      const game = document.getElementById('game');
+
+      let score = 0;
+      let gameActive = true;
+
+      function spawnTarget() {
+        if (!gameActive) return;
+        const target = document.createElement('div');
+        target.className = 'target';
+        const maxX = window.innerWidth - 60;
+        const maxY = window.innerHeight - 60 - 100;
+        target.style.left = Math.random() * maxX + 'px';
+        target.style.top = Math.random() * maxY + 'px';
+
+        target.onclick = () => {
+          target.remove();
+          score += 1;
+          scoreEl.innerText = 'Счёт: ' + score;
+          spawnTarget();
+        };
+
+        game.appendChild(target);
+
+        setTimeout(() => {
+          if (target.parentNode) {
+            target.remove();
+            spawnTarget();
+          }
+        }, 1200);
+      }
+
+      spawnTarget();
+
+      async function saveScore() {
+        statusEl.innerText = 'Отправка...';
+        try {
+          const res = await fetch('https://ТВОЙ_ДОМЕН/api/save_score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              vk_user_id: window.vkBridge.getStorageItem('vk_user_id') || 'unknown',
+              score: score
+            })
+          });
+          const data = await res.json();
+          statusEl.innerText = data.message || 'Результат сохранён!';
+        } catch (e) {
+          statusEl.innerText = 'Ошибка сохранения';
+          console.error(e);
+        }
+      }
+
+      (async () => {
+        try {
+          const user = await vkBridge.send('VKWebAppGetUserInfo');
+          await vkBridge.send('VKWebAppStorageSet', { key: 'vk_user_id', value: String(user.id) });
+        } catch (e) {
+          console.warn('Не удалось получить данные пользователя');
+        }
+      })();
+    </script>
+  </body>
+</html>
