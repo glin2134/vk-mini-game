@@ -3,22 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>VK Mini Game: Поймай квадрат</title>
+  <title>VK Mini Game: Поймай квадрат (Debug)</title>
   <style>
+    /* --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ --- */
     body, html {
       margin: 0;
       padding: 0;
-      overflow: hidden;
-      background-color: #121212;
+      width: 100%;
+      height: 100%;
+      overflow: visible; /* Разрешаем вылезать за края, чтобы видеть баг */
+      background-color: #000;
       color: white;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: sans-serif;
     }
 
     #game-container {
       position: relative;
       width: 100vw;
       height: 100vh;
-      background: #000;
+      /* Ярко-розовая рамка, чтобы видеть границы экрана */
+      border: 5px solid #ff00ff; 
+      box-sizing: border-box; /* Чтобы рамка не увеличивала размер */
+      background: #121212;
+      overflow: visible; /* Важно: не прячем то, что вылезает */
     }
 
     #timer {
@@ -26,11 +33,10 @@
       top: 20px;
       left: 20px;
       font-size: 32px;
-      font-weight: 700;
+      font-weight: bold;
       color: #fff;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
       z-index: 100;
-      user-select: none;
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
     }
 
     #score-display {
@@ -39,10 +45,8 @@
       right: 20px;
       font-size: 28px;
       color: #4caf50;
-      font-weight: 700;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      font-weight: bold;
       z-index: 100;
-      user-select: none;
     }
 
     /* Квадрат-цель */
@@ -56,16 +60,19 @@
       cursor: pointer;
       z-index: 10;
       display: block;
-      top: 100px;
-      left: 100px;
-      box-shadow: 0 6px 15px rgba(255, 140, 0, 0.4);
+      /* Начальные координаты ставим в центр, чтобы точно было видно */
+      top: 50px; 
+      left: 50px;
+      box-shadow: 0 0 20px rgba(255, 140, 0, 0.8);
       will-change: left, top;
       user-select: none;
       transition: transform 0.1s ease;
+      /* Добавим outline, чтобы видеть квадрат даже если цвет фона сольется */
+      outline: 2px dashed white; 
     }
 
     #target:active {
-      transform: scale(0.92);
+      transform: scale(0.9);
     }
 
     #save-score-btn {
@@ -75,19 +82,14 @@
       transform: translateX(-50%);
       padding: 16px 32px;
       font-size: 20px;
-      font-weight: 700;
+      font-weight: bold;
       background-color: #2481cc;
       color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
       z-index: 100;
-      box-shadow: 0 4px 12px rgba(36, 129, 204, 0.4);
       display: none;
-    }
-
-    #save-score-btn:active {
-      transform: translateX(-50%) scale(0.98);
     }
 
     #game-overlay {
@@ -96,7 +98,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.9);
       z-index: 90;
       display: none;
       justify-content: center;
@@ -107,15 +109,14 @@
     #final-message {
       font-size: 36px;
       color: #ff5252;
-      font-weight: 700;
-      margin-bottom: 16px;
-      text-align: center;
+      font-weight: bold;
+      margin-bottom: 20px;
     }
 
     #final-score {
       font-size: 60px;
       color: #fff;
-      font-weight: 700;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -155,7 +156,7 @@
         vkUserId = e.data.user_id.toString();
       });
     } else {
-      console.log('VK Bridge не найден. Игра запущена вне VK.');
+      console.log('⚠️ VK Bridge не найден. Игра запущена как обычный сайт.');
     }
 
     function updateTimer() {
@@ -191,10 +192,13 @@
       const gameContainer = document.getElementById('game-container');
       if (!gameContainer) return;
 
+      // Получаем размеры. Если clientWidth 0, берем window.innerWidth
       const cWidth = gameContainer.clientWidth || window.innerWidth;
       const cHeight = gameContainer.clientHeight || window.innerHeight;
 
       const size = 100;
+      
+      // Защита от отрицательных значений
       const maxX = Math.max(0, cWidth - size);
       const maxY = Math.max(0, cHeight - size);
 
@@ -204,7 +208,8 @@
       targetEl.style.left = `\${randomX}px`;
       targetEl.style.top = `\${randomY}px`;
       
-      console.log(`[MOVE] Квадрат перемещён: X=${randomX}, Y=${randomY}`);
+      console.log(`✅ [MOVE] Квадрат перемещён: X=${randomX}, Y=${randomY}`);
+      console.log(`📐 Размеры контейнера: ${cWidth}x${cHeight}`);
     }
 
     function startGame() {
@@ -217,7 +222,7 @@
 
       startTimer();
       spawnTarget();
-      console.log('[GAME] Start game successful');
+      console.log('🚀 [GAME] Start game successful');
     }
 
     function endGame() {
@@ -229,17 +234,16 @@
       overlay.style.display = 'flex';
       saveBtn.style.display = 'block';
       document.getElementById('game-container').style.pointerEvents = 'none';
-      console.log('[GAME] End game');
+      console.log('🏁 [GAME] End game');
     }
 
-    // ГЛАВНОЕ ИСПРАВЛЕНИЕ: перемещение по клику
     if (targetEl) {
       targetEl.addEventListener('click', () => {
         if (!isGameActive) return;
 
         score++;
         updateScore();
-        spawnTarget(); // <-- Теперь квадрат прыгает сразу при клике
+        spawnTarget(); // <-- ГЛАВНОЕ: прыжок по клику
       });
     }
 
@@ -257,18 +261,17 @@
         });
 
         if (res.ok) {
-          alert('Результат успешно сохранён!');
+          alert('Результат сохранён!');
         } else {
-          const errData = await res.json().catch(() => ({}));
-          alert(`Ошибка сохранения: \${errData.detail || 'Неизвестная ошибка'}`);
+          alert('Ошибка сохранения');
         }
       } catch (error) {
-        console.error('Network error:', error);
-        alert('Ошибка сети. Проверьте ngrok и бэкенд.');
+        console.error(error);
+        alert('Ошибка сети. Проверьте ngrok.');
       }
     }
 
-    setTimeout(startGame, 200);
+    setTimeout(startGame, 500);
   </script>
 </body>
 </html>
