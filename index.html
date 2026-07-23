@@ -70,7 +70,7 @@
       async function saveScore() {
         statusEl.innerText = 'Отправка...';
         try {
-          const res = await fetch('https://ТВОЙ_ДОМЕН/api/save_score', {
+          const res = await fetch('https://dashboard.ngrok.com/get-started/your-authtoken/api/save_score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
