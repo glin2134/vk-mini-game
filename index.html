@@ -13,193 +13,46 @@
         --primary: #0077FF;
         --primary-hover: #005edd;
         --target: #ff5252;
-        --glow: #ff3d3d;
         --rank-gold: #FFD700;
         --rank-silver: #C0C0C0;
         --rank-bronze: #CD7F32;
       }
-
       * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        background: var(--vk-bg);
-        color: var(--vk-text);
-        font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-        overflow: hidden;
-      }
-      #game {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        background-image: radial-gradient(circle at 50% 50%, #222 0%, #191919 100%);
-      }
-      .target {
-        position: absolute;
-        width: 60px;
-        height: 60px;
-        background: var(--target);
-        border-radius: 12px;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4);
-        animation: pulse 1.2s infinite ease-in-out;
-        will-change: transform;
-      }
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.08); }
-      }
-      .target:active {
-        transform: scale(0.92) !important;
-        animation: none;
-      }
-      /* UI */
-      #ui {
-        position: absolute;
-        top: 24px;
-        left: 24px;
-        right: 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        pointer-events: none;
-        z-index: 10;
-      }
-      .score-block {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      #score {
-        font-size: 28px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-      }
-      .icon {
-        width: 20px;
-        height: 20px;
-        background: rgba(255,255,255,0.15);
-        border-radius: 50%;
-        display: inline-block;
-      }
-      #status {
-        position: absolute;
-        bottom: 90px;
-        left: 50%;
-        transform: translateX(-50%);
-        text-align: center;
-        color: var(--vk-text-secondary);
-        font-size: 15px;
-        max-width: 320px;
-        line-height: 1.4;
-      }
-      #btn-save {
-        position: absolute;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 14px 32px;
-        background: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        font-size: 17px;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 4px 16px rgba(0, 119, 255, 0.3);
-        transition: background 0.2s, transform 0.1s;
-        z-index: 10;
-      }
+      body { margin: 0; background: var(--vk-bg); color: var(--vk-text); font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
+      #game { position: relative; width: 100vw; height: 100vh; overflow: hidden; background-image: radial-gradient(circle at 50% 50%, #222 0%, #191919 100%); }
+      .target { position: absolute; width: 60px; height: 60px; background: var(--target); border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4); animation: pulse 1.2s infinite ease-in-out; will-change: transform; }
+      @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+      .target:active { transform: scale(0.92) !important; animation: none; }
+      #ui { position: absolute; top: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; z-index: 10; }
+      .score-block { display: flex; align-items: center; gap: 8px; }
+      #score { font-size: 28px; font-weight: 700; letter-spacing: 0.5px; }
+      .icon { width: 20px; height: 20px; background: rgba(255,255,255,0.15); border-radius: 50%; }
+      #status { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); text-align: center; color: var(--vk-text-secondary); font-size: 15px; max-width: 320px; line-height: 1.4; }
+      #btn-save { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 14px 32px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 17px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 119, 255, 0.3); transition: background 0.2s, transform 0.1s; z-index: 10; }
       #btn-save:hover { background: var(--primary-hover); }
       #btn-save:active { transform: scale(0.96); }
 
-      /* Оверлеи */
-      .overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.85);
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 20;
-        padding: 20px;
-        backdrop-filter: blur(4px);
-      }
+      .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 20px; backdrop-filter: blur(4px); }
       .overlay.active { display: flex; }
-      .overlay-title {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 8px;
-        text-align: center;
-      }
-      .overlay-text {
-        color: var(--vk-text-secondary);
-        margin-bottom: 24px;
-        text-align: center;
-      }
-      .btn-secondary {
-        background: transparent;
-        color: white;
-        border: 1px solid rgba(255,255,255,0.2);
-        padding: 12px 24px;
-        border-radius: 12px;
-        cursor: pointer;
-        font-size: 16px;
-        transition: border-color 0.2s;
-      }
+      .overlay-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+      .overlay-text { color: var(--vk-text-secondary); margin-bottom: 24px; text-align: center; }
+      .btn-secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 12px; cursor: pointer; font-size: 16px; transition: border-color 0.2s; }
       .btn-secondary:hover { border-color: white; }
 
-      /* Топ-10 */
-      .leaderboard {
-        width: 100%;
-        max-width: 400px;
-        background: var(--vk-surface);
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      }
-      .leaderboard-header {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 16px;
-        color: var(--vk-text);
-      }
-      .rank-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-      }
-      .rank-col {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .rank-num {
-        font-weight: 700;
-        min-width: 24px;
-        text-align: right;
-      }
+      .leaderboard { width: 100%; max-width: 400px; background: var(--vk-surface); border-radius: 16px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+      .leaderboard-header { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--vk-text); }
+      .rank-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .rank-col { display: flex; align-items: center; gap: 10px; }
+      .rank-num { font-weight: 700; min-width: 24px; text-align: right; }
       .rank-1 .rank-num { color: var(--rank-gold); }
       .rank-2 .rank-num { color: var(--rank-silver); }
       .rank-3 .rank-num { color: var(--rank-bronze); }
-      .rank-name {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 180px;
-      }
-      .rank-score {
-        font-weight: 600;
-      }
+      .rank-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+      .rank-score { font-weight: 600; }
     </style>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
     <script>
-      (async () => {
-        await vkBridge.send('VKWebAppInit');
-      })();
+      (async () => { await vkBridge.send('VKWebAppInit'); })();
     </script>
   </head>
   <body>
@@ -211,13 +64,10 @@
         </div>
         <div style="font-size:14px; color:var(--vk-text-secondary)">VK Game</div>
       </div>
-
       <div id="status">Жми на пульсирующие квадраты</div>
-
       <button id="btn-save" onclick="saveScore()">Сохранить результат</button>
     </div>
 
-    <!-- Экран «Игра окончена» -->
     <div id="overlay-end" class="overlay">
       <div class="overlay-title">Игра окончена</div>
       <div class="overlay-text">Твой счёт: <span id="final-score">0</span></div>
@@ -225,7 +75,6 @@
       <button class="btn-secondary" style="margin-top:12px" onclick="restartGame()">Играть снова</button>
     </div>
 
-    <!-- Топ‑10 -->
     <div id="overlay-leaderboard" class="overlay">
       <div class="overlay-title">Топ‑10 игроков</div>
       <div class="leaderboard">
@@ -298,7 +147,7 @@
       async function saveScore() {
         statusEl.innerText = 'Отправка...';
         try {
-          const res = await fetch('https://ТВОЙ_ДОМЕН/api/save_score', {
+          const res = await fetch('https://ngrok.com/docs/errors/err_ngrok_4018/api/save_score', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -317,7 +166,7 @@
       async function showLeaderboard() {
         statusEl.innerText = 'Загрузка рейтинга...';
         try {
-          const res = await fetch('https://ТВОЙ_ДОМЕН/api/top');
+          const res = await fetch('https://ngrok.com/docs/errors/err_ngrok_4018/api/top');
           const data = await res.json();
 
           lbList.innerHTML = '';
@@ -356,8 +205,7 @@
         }
       })();
 
-      // Игра длится 60 секунд (можно убрать)
-      setTimeout(endGame, 60000);
+      setTimeout(endGame, 60000); // 60 секунд
     </script>
   </body>
 </html>
